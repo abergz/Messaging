@@ -1,0 +1,20 @@
+app:
+    version: 0.3
+    exchangeName: spring
+    queueName: spring-queue
+environments:
+    dev:
+        rabbitmq:
+            host: localhost
+            port: 5672
+            virtualhost: /
+    uat:
+        rabbitmq:
+            host: localhost
+            port: 5672
+            virtualhost: /
+    prod:
+        rabbitmq:
+            host: localhost
+            port: 5672
+            virtualhost: /
