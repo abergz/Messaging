@@ -21,7 +21,7 @@ public class RedisConsumer implements MessageListener {
 
         Object obj = serializer.deserialize(message.getBody());
         if(obj != null && obj instanceof RedisMessage) {
-            System.out.println("Received message(" + atomicInteger.incrementAndGet() + ") " + obj.toString());
+            System.err.println("Received message(" + atomicInteger.incrementAndGet() + ") " + obj.toString());
         }
 
     }
