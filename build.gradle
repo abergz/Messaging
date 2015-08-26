@@ -29,8 +29,12 @@ targetCompatibility = 1.8
 
 dependencies {
     compile("org.springframework.boot:spring-boot-starter")
-    compile("org.springframework.boot:spring-boot-starter-amqp")
     compile("org.springframework.boot:spring-boot-starter-redis")
+
+
+    //compile("com.fasterxml.jackson.core:jackson-databind:2.6.1")
+//    compile("redis.clients:jedis:2.7.2")
+
     testCompile("junit:junit")
 }
 
