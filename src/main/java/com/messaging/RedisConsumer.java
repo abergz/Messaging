@@ -18,24 +18,24 @@ public class RedisConsumer implements MessageListener {
     MessageSerializer serializer = new MessageSerializer();
     AtomicInteger atomicInteger = new AtomicInteger(0);
 
-    private final LinkedBlockingQueue<Message> linkedQueue;
+    /*private final LinkedBlockingQueue<Message> linkedQueue;
 
     @Autowired
     public RedisConsumer(LinkedBlockingQueue<Message> linkedQueue) {
         this.linkedQueue = linkedQueue;
-    }
+    }*/
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
-        try {
+        /*try {
             linkedQueue.put(message);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
-        /*Object obj = serializer.deserialize(message.getBody());
+        }*/
+        Object obj = serializer.deserialize(message.getBody());
         if(obj != null && obj instanceof RedisMessage) {
             System.err.println("Received message(" + atomicInteger.incrementAndGet() + ") " + obj.toString());
-        }*/
+        }
 
     }
 

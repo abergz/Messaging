@@ -10,9 +10,13 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import redis.clients.jedis.JedisPoolConfig;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 
 
 @Configuration
@@ -34,8 +38,10 @@ public class RedisConfig {
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestOnReturn(true);
 
-        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(poolConfig); //(sentinel,pool)
-        jedisConnectionFactory.setUsePool(true);
+        //JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(poolConfig); //(sentinel,pool)
+        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(); //(sentinel,pool)
+        jedisConnectionFactory.setUsePool(false);
+        //jedisConnectionFactory.setUsePool(true);
         jedisConnectionFactory.setHostName("localhost");
         jedisConnectionFactory.setPort(6379);
         return jedisConnectionFactory;
@@ -55,13 +61,24 @@ public class RedisConfig {
 
     @Bean
     MessageListenerAdapter messageListenerAdapter() {
-        return new MessageListenerAdapter(new RedisConsumer(linkedQueue()));
+        //return new MessageListenerAdapter(new RedisConsumer(linkedQueue()));
+        return new MessageListenerAdapter(new RedisConsumer());
     }
 
     @Bean
     RedisMessageListenerContainer redisContainer() { //JedisConnectionFactory jedisConnectionFactory, MessageListener messageListenerAdapter) {
         final RedisMessageListenerContainer redisContainer = new RedisMessageListenerContainer();
         redisContainer.setConnectionFactory(jedisConnectionFactory());
+
+        /*ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r);
+            }
+        });*/
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        redisContainer.setTaskExecutor(executorService);
+        redisContainer.setSubscriptionExecutor(executorService);
         //redisContainer.addMessageListener(messageListenerAdapter, channelTopic2());
         return redisContainer;
     }

@@ -24,10 +24,10 @@ public class Application implements CommandLineRunner {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
-
+/*
     @Autowired
     LinkedBlockingQueue<Message> linkedQueue;
-
+*/
     @Autowired
     ConnectionManager connectionManager;
 
@@ -48,13 +48,13 @@ public class Application implements CommandLineRunner {
                         for (int i = 0; i < 100; i++) {
                             redisPublisher.publish(channelTopic, new RedisMessage(i + 1));
                         }
-
+                        System.err.println("done");
                         Thread.sleep(100);
 
-                        System.err.println("Num elements: " + linkedQueue.size());
+                        //System.err.println("Num elements: " + linkedQueue.size());
 
                         int messageCount = 0;
-
+/*
                         while (linkedQueue.size() > 0) {
 
                             Message message = linkedQueue.take();
@@ -67,7 +67,7 @@ public class Application implements CommandLineRunner {
                                 break;
                             }
                         }
-
+*/
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
