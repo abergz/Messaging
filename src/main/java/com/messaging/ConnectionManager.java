@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConnectionManager {
 
-    //@Autowired
     private final RedisMessageListenerContainer redisContainer;
     private final MessageListenerAdapter messageListenerAdapter;
 

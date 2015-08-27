@@ -5,13 +5,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
 
 import java.io.*;
-import java.util.concurrent.LinkedBlockingQueue;
 
 
 @SpringBootApplication
@@ -19,45 +17,41 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Application implements CommandLineRunner {
 
     @Autowired
-    RedisPublisher redisPublisher;
+    MessagePublisher messagePublisher;
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
-/*
-    @Autowired
-    LinkedBlockingQueue<Message> linkedQueue;
-*/
     @Autowired
     ConnectionManager connectionManager;
-
 
     @Override
     public void run(final String... args) throws Exception {
         final ChannelTopic channelTopic = connectionManager.subscribe("pubsub:queue");
+        final ChannelTopic channelTopic2 = connectionManager.subscribe("pubsub:queue2");
         if (args != null && args[0].equals("produce")) {
 
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        MessageSerializer serializer = new MessageSerializer();
 
                         Thread.sleep(100);
 
-                        for (int i = 0; i < 100; i++) {
-                            redisPublisher.publish(channelTopic, new RedisMessage(i + 1));
+                        for (int i = 0; i < 100; i+=2) {
+                            messagePublisher.publish(channelTopic, new RedisMessage(i + 1));
+                            messagePublisher.publish(channelTopic2, new RedisMessage(i + 2));
                         }
                         System.err.println("done");
                         Thread.sleep(100);
 
-                        //System.err.println("Num elements: " + linkedQueue.size());
+                        //System.err.println("Num elements: " + messageReceiveQueue.size());
 
                         int messageCount = 0;
 /*
-                        while (linkedQueue.size() > 0) {
+                        while (messageReceiveQueue.size() > 0) {
 
-                            Message message = linkedQueue.take();
+                            Message message = messageReceiveQueue.take();
                             RedisMessage redisMessage = (RedisMessage) serializer.deserialize(message.getBody());
 
                             System.err.println("Received message(" + ++messageCount + ") " + redisMessage.toString());

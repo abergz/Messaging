@@ -10,17 +10,15 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 
 
 @Configuration
-public class RedisConfig {
+public class RedisConfiguration {
 
     @Bean
     public JedisConnectionFactory jedisConnectionFactory() {
@@ -38,55 +36,41 @@ public class RedisConfig {
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestOnReturn(true);
 
-        //JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(poolConfig); //(sentinel,pool)
-        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(); //(sentinel,pool)
-        jedisConnectionFactory.setUsePool(false);
-        //jedisConnectionFactory.setUsePool(true);
+        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(poolConfig); //(sentinel,pool)
+        jedisConnectionFactory.setUsePool(true);
         jedisConnectionFactory.setHostName("localhost");
         jedisConnectionFactory.setPort(6379);
         return jedisConnectionFactory;
     }
 
     @Bean
-    RedisTemplate<String, Object> redisTemplate() {
+    RedisTemplate<String, Object> redisTemplate(JedisConnectionFactory jedisConnectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<String, Object>();
-        template.setConnectionFactory(jedisConnectionFactory());
+        template.setConnectionFactory(jedisConnectionFactory);
         return template;
     }
 
     @Bean
-    LinkedBlockingQueue<Message> linkedQueue() {
+    LinkedBlockingQueue<Message> messageReceiveQueue() {
         return new LinkedBlockingQueue<Message>(100);
     }
 
     @Bean
-    MessageListenerAdapter messageListenerAdapter() {
-        //return new MessageListenerAdapter(new RedisConsumer(linkedQueue()));
-        return new MessageListenerAdapter(new RedisConsumer());
+    MessageListenerAdapter messageListenerAdapter(LinkedBlockingQueue<Message> messageReceiveQueue) {
+
+        return new MessageListenerAdapter(new MessageSubscriber(messageReceiveQueue));
     }
 
     @Bean
-    RedisMessageListenerContainer redisContainer() { //JedisConnectionFactory jedisConnectionFactory, MessageListener messageListenerAdapter) {
+    RedisMessageListenerContainer redisContainer(JedisConnectionFactory jedisConnectionFactory) {
         final RedisMessageListenerContainer redisContainer = new RedisMessageListenerContainer();
-        redisContainer.setConnectionFactory(jedisConnectionFactory());
+        redisContainer.setConnectionFactory(jedisConnectionFactory);
 
-        /*ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r);
-            }
-        });*/
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
         redisContainer.setTaskExecutor(executorService);
         redisContainer.setSubscriptionExecutor(executorService);
-        //redisContainer.addMessageListener(messageListenerAdapter, channelTopic2());
+
         return redisContainer;
     }
-/*
-    @Bean
-    ChannelTopic channelTopic2() {
-        return new ChannelTopic("pubsub:queue2");
-    }*/
-
 
 }
