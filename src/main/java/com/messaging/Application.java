@@ -5,7 +5,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.SerializationException;
+
+import java.io.*;
+import java.util.concurrent.LinkedBlockingQueue;
 
 
 @SpringBootApplication
@@ -20,7 +26,11 @@ public class Application implements CommandLineRunner {
     }
 
     @Autowired
+    LinkedBlockingQueue<Message> linkedQueue;
+
+    @Autowired
     ConnectionManager connectionManager;
+
 
     @Override
     public void run(final String... args) throws Exception {
@@ -31,17 +41,77 @@ public class Application implements CommandLineRunner {
                 @Override
                 public void run() {
                     try {
-                        Thread.sleep(5000);
+                        MessageSerializer serializer = new MessageSerializer();
+
+                        Thread.sleep(100);
+
+                        for (int i = 0; i < 100; i++) {
+                            redisPublisher.publish(channelTopic, new RedisMessage(i + 1));
+                        }
+
+                        Thread.sleep(100);
+
+                        System.err.println("Num elements: " + linkedQueue.size());
+
+                        int messageCount = 0;
+
+                        while (linkedQueue.size() > 0) {
+
+                            Message message = linkedQueue.take();
+                            RedisMessage redisMessage = (RedisMessage) serializer.deserialize(message.getBody());
+
+                            System.err.println("Received message(" + ++messageCount + ") " + redisMessage.toString());
+
+                            if (messageCount != redisMessage.getId()) {
+                                System.err.println("Message arrived in wrong order");
+                                break;
+                            }
+                        }
+
                     } catch (InterruptedException e) {
                         e.printStackTrace();
-                    }
-                    for (int i = 0; i < 10; i++) {
-                        redisPublisher.publish(channelTopic, new RedisMessage(i + 1));
                     }
                 }
             }).run();
         }
 
 
+    }
+
+    class MessageSerializer implements RedisSerializer<Object>
+
+    {
+        @Override
+        public byte[] serialize(Object object) throws SerializationException {
+            try {
+                ByteArrayOutputStream boas = new ByteArrayOutputStream();
+                ObjectOutputStream ous = new ObjectOutputStream(boas);
+                ous.writeObject(object);
+                byte[] bytes = boas.toByteArray();
+                ous.close();
+                return bytes;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+
+        }
+
+        @Override
+        public Object deserialize(byte[] bytes) throws SerializationException {
+            try {
+                ByteArrayInputStream boas = new ByteArrayInputStream(bytes);
+                ObjectInputStream ous = new ObjectInputStream(boas);
+                Object object = ous.readObject();
+                ous.close();
+                return object;
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            return null;
+
+        }
     }
 }

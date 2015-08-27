@@ -1,5 +1,6 @@
 package com.messaging;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.serializer.RedisSerializer;
@@ -7,6 +8,7 @@ import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -16,13 +18,24 @@ public class RedisConsumer implements MessageListener {
     MessageSerializer serializer = new MessageSerializer();
     AtomicInteger atomicInteger = new AtomicInteger(0);
 
+    private final LinkedBlockingQueue<Message> linkedQueue;
+
+    @Autowired
+    public RedisConsumer(LinkedBlockingQueue<Message> linkedQueue) {
+        this.linkedQueue = linkedQueue;
+    }
+
     @Override
     public void onMessage(Message message, byte[] pattern) {
-
-        Object obj = serializer.deserialize(message.getBody());
+        try {
+            linkedQueue.put(message);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        /*Object obj = serializer.deserialize(message.getBody());
         if(obj != null && obj instanceof RedisMessage) {
             System.err.println("Received message(" + atomicInteger.incrementAndGet() + ") " + obj.toString());
-        }
+        }*/
 
     }
 

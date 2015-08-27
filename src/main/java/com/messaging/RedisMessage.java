@@ -5,6 +5,11 @@ import java.io.Serializable;
 public class RedisMessage implements Serializable {
 
     String message;
+
+    public int getId() {
+        return id;
+    }
+
     int id;
 
     public RedisMessage(int id) {
