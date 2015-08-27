@@ -23,15 +23,25 @@ public class Application implements CommandLineRunner {
     ConnectionManager connectionManager;
 
     @Override
-    public void run(String... args) throws Exception {
-        ChannelTopic channelTopic = connectionManager.subscribe("pubsub:queue");
-
+    public void run(final String... args) throws Exception {
+        final ChannelTopic channelTopic = connectionManager.subscribe("pubsub:queue");
         if (args != null && args[0].equals("produce")) {
-            for (int i = 0; i < 10; i++) {
-                redisPublisher.publish(channelTopic, new RedisMessage(i + 1));
-                //redisPublisher.publish(new ChannelTopic("pubsub:queue2"), new RedisMessage(i + 1));
-            }
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    for (int i = 0; i < 10; i++) {
+                        redisPublisher.publish(channelTopic, new RedisMessage(i + 1));
+                    }
+                }
+            }).run();
         }
+
 
     }
 }

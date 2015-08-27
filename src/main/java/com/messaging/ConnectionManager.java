@@ -17,6 +17,7 @@ public class ConnectionManager {
     public ConnectionManager(RedisMessageListenerContainer redisContainer, MessageListenerAdapter messageListenerAdapter) {
         this.redisContainer = redisContainer;
         this.messageListenerAdapter = messageListenerAdapter;
+        redisContainer.ex
     }
 
     public ChannelTopic subscribe(String channelTopic) {

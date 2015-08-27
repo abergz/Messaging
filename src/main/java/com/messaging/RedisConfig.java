@@ -8,13 +8,14 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+import redis.clients.jedis.JedisPoolConfig;
 
 
 @Configuration
 public class RedisConfig {
 
     @Bean
-    public RedisConnectionFactory redisConnectionFactory() {
+    public JedisConnectionFactory jedisConnectionFactory() {
 
         RedisSentinelConfiguration sentinelConfig =
                 new RedisSentinelConfiguration()
@@ -23,13 +24,13 @@ public class RedisConfig {
                         .sentinel("127.0.0.1", 26380);
 
         //return new JedisConnectionFactory(sentinelConfig);
-/*
+
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(5);
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestOnReturn(true);
-*/
-        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory();//poolConfig); //(sentinel,pool)
+
+        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory();//(poolConfig); //(sentinel,pool)
         jedisConnectionFactory.setUsePool(false);
         jedisConnectionFactory.setHostName("localhost");
         jedisConnectionFactory.setPort(6379);
@@ -39,7 +40,7 @@ public class RedisConfig {
     @Bean
     RedisTemplate<String, Object> redisTemplate() {
         RedisTemplate<String, Object> template = new RedisTemplate<String, Object>();
-        template.setConnectionFactory(redisConnectionFactory());
+        template.setConnectionFactory(jedisConnectionFactory());
         return template;
     }
 
@@ -49,9 +50,9 @@ public class RedisConfig {
     }
 
     @Bean
-    RedisMessageListenerContainer redisContainer(RedisConnectionFactory redisConnectionFactory) {//, MessageListener messageListenerAdapter) {
+    RedisMessageListenerContainer redisContainer(JedisConnectionFactory jedisConnectionFactory) {//, MessageListener messageListenerAdapter) {
         final RedisMessageListenerContainer redisContainer = new RedisMessageListenerContainer();
-        redisContainer.setConnectionFactory(redisConnectionFactory);
+        redisContainer.setConnectionFactory(jedisConnectionFactory);
         //redisContainer.addMessageListener(messageListenerAdapter, topic());
         return redisContainer;
     }
